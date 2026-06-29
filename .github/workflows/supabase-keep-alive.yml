@@ -1,0 +1,23 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'  # 每週一 UTC 01:00（台灣時間週一 09:00）
+  workflow_dispatch:       # 也可手動觸發
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/transactions?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP status: $response"
+          if [ "$response" = "200" ]; then
+            echo "✅ Supabase is alive"
+          else
+            echo "⚠️ Unexpected status: $response"
+          fi
