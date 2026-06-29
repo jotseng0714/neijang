@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { SalaryRecord } from '@/lib/database.types'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) as any
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
 
@@ -49,7 +52,7 @@ export default function SalaryPage() {
   }
 
   const exportExcel = () => {
-    const data = records.map(r => ({
+    const data: Record<string, string | number>[] = records.map(r => ({
       '年份': r.year,
       '月份': r.month,
       '姓名': r.name,

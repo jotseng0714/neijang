@@ -42,10 +42,11 @@ export default function ReimbursePage() {
   }
 
   const exportExcel = () => {
-    const data = pending.map((r, i) => ({
+    const total = pending.reduce((s, r) => s + (r.currency === 'NTD' ? r.amount : 0), 0)
+    const data: Record<string, string | number>[] = pending.map((r, i) => ({
       '序號': i + 1,
       '日期': r.date,
-      '品項 / 用途': r.purpose,
+      '品項 / 用途': r.purpose ?? '',
       '廠商': r.vendor ?? '',
       '支出分類': r.expense_category ?? '',
       '金額': r.amount,
@@ -53,8 +54,7 @@ export default function ReimbursePage() {
       '發票號碼': r.invoice_number ?? '',
       '備註': r.note ?? '',
     }))
-    const total = pending.reduce((s, r) => s + (r.currency === 'NTD' ? r.amount : 0), 0)
-    data.push({ '序號': '' as unknown as number, '日期': '', '品項 / 用途': '', '廠商': '', '支出分類': '合計 (NTD)', '金額': total, '幣別': '', '發票號碼': '', '備註': '' })
+    data.push({ '序號': '', '日期': '', '品項 / 用途': '', '廠商': '', '支出分類': '合計 (NTD)', '金額': total, '幣別': '', '發票號碼': '', '備註': '' })
 
     const ws = XLSX.utils.json_to_sheet(data)
     ws['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 24 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 6 }, { wch: 14 }, { wch: 20 }]

@@ -23,7 +23,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, inputMeth
     expense_category: initial?.expense_category ?? '',
     income_category: initial?.income_category ?? '',
     amount: initial?.amount?.toString() ?? '',
-    currency: initial?.currency ?? 'NTD',
+    currency: initial?.currency ?? ('NTD' as string),
     vendor: initial?.vendor ?? '',
     invoice_number: initial?.invoice_number ?? '',
     purpose: initial?.purpose ?? '',
@@ -33,7 +33,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, inputMeth
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const set = (key: string, value: string | boolean) =>
+  const set = (key: string, value: string | boolean | null) =>
     setForm(f => ({ ...f, [key]: value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
