@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
     const mimeType = file.type || 'image/jpeg'
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
     const prompt = `請分析這張收據或發票圖片，擷取以下資訊並以 JSON 格式回傳。如果某欄位無法辨識請回傳 null。
 
