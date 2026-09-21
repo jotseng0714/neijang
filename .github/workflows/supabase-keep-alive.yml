@@ -2,7 +2,9 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    - cron: '0 1 * * 1'  # 每週一 UTC 01:00（台灣時間週一 09:00）
+    # 每週一、四 UTC 01:00（台灣時間 09:00）
+    # Supabase 免費專案閒置 7 天會暫停，每週只 ping 一次間隔剛好 7 天，太貼近門檻
+    - cron: '0 1 * * 1,4'
   workflow_dispatch:       # 也可手動觸發
 
 jobs:
@@ -11,13 +13,23 @@ jobs:
     steps:
       - name: Ping Supabase
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
+          set +e
+          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
             "${{ secrets.SUPABASE_URL }}/rest/v1/transactions?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
-          echo "HTTP status: $response"
-          if [ "$response" = "200" ]; then
+          curl_exit=$?
+          echo "curl exit code: $curl_exit, HTTP status: $response"
+
+          if [ "$curl_exit" = "6" ]; then
+            echo "::error::無法解析 Supabase 網址，專案可能已被暫停。請到 Supabase Dashboard 執行 Restore project，並確認 SUPABASE_URL secret 正確。"
+            exit 1
+          elif [ "$curl_exit" != "0" ]; then
+            echo "::error::curl 失敗（exit code $curl_exit）"
+            exit 1
+          elif [ "$response" = "200" ]; then
             echo "✅ Supabase is alive"
           else
-            echo "⚠️ Unexpected status: $response"
+            echo "::error::非預期的 HTTP 狀態：$response（401/403 檢查 ANON_KEY，404 檢查 transactions 資料表，5xx 專案可能異常）"
+            exit 1
           fi
