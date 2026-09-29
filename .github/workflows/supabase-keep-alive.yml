@@ -2,9 +2,10 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    # 每週一、四 UTC 01:00（台灣時間 09:00）
-    # Supabase 免費專案閒置 7 天會暫停，每週只 ping 一次間隔剛好 7 天，太貼近門檻
-    - cron: '0 1 * * 1,4'
+    # 每天 UTC 01:00（台灣時間 09:00）
+    # Supabase 免費專案閒置 7 天會暫停；2026-09-27 在每週兩次 ping 都成功的情況下
+    # 仍收到「活動不足」警告，因此改為每天一次
+    - cron: '0 1 * * *'
   workflow_dispatch:       # 也可手動觸發
 
 jobs:
