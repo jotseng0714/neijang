@@ -7,15 +7,17 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File
-    if (!file) return NextResponse.json({ error: '未收到圖片' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: '未收到檔案' }, { status: 400 })
 
     const bytes = await file.arrayBuffer()
     const base64 = Buffer.from(bytes).toString('base64')
-    const mimeType = file.type || 'image/jpeg'
+    // 部分手機選取的檔案 type 為空，依副檔名判斷 PDF
+    const mimeType =
+      file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg')
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
-    const prompt = `請分析這張收據或發票圖片，擷取以下資訊並以 JSON 格式回傳。如果某欄位無法辨識請回傳 null。
+    const prompt = `請分析這張收據或發票（圖片或 PDF 檔），擷取以下資訊並以 JSON 格式回傳。如果某欄位無法辨識請回傳 null。
 
 回傳格式（只回傳 JSON，不要其他文字）：
 {
