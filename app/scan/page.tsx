@@ -20,15 +20,19 @@ type OcrResult = {
 export default function ScanPage() {
   const [image, setImage] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
+  const [isPdf, setIsPdf] = useState(false)
   const [ocr, setOcr] = useState<OcrResult | null>(null)
   const [scanning, setScanning] = useState(false)
   const [ocrError, setOcrError] = useState('')
   const [step, setStep] = useState<'upload' | 'confirm'>('upload')
+  const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   const handleFile = (f: File) => {
+    if (image) URL.revokeObjectURL(image)
     setFile(f)
+    setIsPdf(f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
     setImage(URL.createObjectURL(f))
     setStep('upload')
     setOcr(null)
@@ -69,29 +73,58 @@ export default function ScanPage() {
     <div className="min-h-screen bg-gray-50 p-4 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => router.push('/')} className="text-gray-500 hover:text-gray-800">←</button>
-        <h1 className="text-xl font-bold">拍照記帳</h1>
+        <h1 className="text-xl font-bold">拍照 / 上傳記帳</h1>
       </div>
 
       {/* 上傳區 */}
       <Card className="mb-4">
         <CardContent className="pt-4">
+          {/* 拍照：capture 會直接開啟相機 */}
           <input
-            ref={fileRef}
+            ref={cameraRef}
             type="file"
             accept="image/*"
             capture="environment"
             className="hidden"
-            onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+            onChange={e => {
+              if (e.target.files?.[0]) handleFile(e.target.files[0])
+              e.target.value = ''
+            }}
+          />
+          {/* 上傳：不加 capture，才能從相簿或檔案選擇圖片 / PDF */}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf,.pdf"
+            className="hidden"
+            onChange={e => {
+              if (e.target.files?.[0]) handleFile(e.target.files[0])
+              e.target.value = ''
+            }}
           />
 
           {image ? (
             <div className="space-y-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image} alt="收據" className="w-full rounded-lg max-h-64 object-contain bg-gray-100" />
+              {isPdf ? (
+                <div className="w-full rounded-lg bg-gray-100 p-4 flex items-center gap-3">
+                  <span className="text-3xl">📄</span>
+                  <span className="text-sm text-gray-700 break-all">{file?.name}</span>
+                </div>
+              ) : (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image} alt="收據" className="w-full rounded-lg max-h-64 object-contain bg-gray-100" />
+                </>
+              )}
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => fileRef.current?.click()} className="flex-1">
+                <Button variant="outline" onClick={() => cameraRef.current?.click()} className="flex-1">
                   重新拍照
                 </Button>
+                <Button variant="outline" onClick={() => fileRef.current?.click()} className="flex-1">
+                  重新上傳
+                </Button>
+              </div>
+              <div className="flex gap-2">
                 {step === 'upload' && (
                   <Button onClick={handleScan} disabled={scanning} className="flex-1">
                     {scanning ? '辨識中...' : '開始 OCR 辨識'}
@@ -101,14 +134,25 @@ export default function ScanPage() {
               {ocrError && <p className="text-amber-600 text-sm">{ocrError}，已帶入空白表單供手動填寫。</p>}
             </div>
           ) : (
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="w-full h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors"
-            >
-              <span className="text-4xl">📷</span>
-              <span className="font-medium">點擊拍照或上傳發票 / 收據</span>
-              <span className="text-xs">支援 JPG、PNG、HEIC</span>
-            </button>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => cameraRef.current?.click()}
+                  className="h-40 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors"
+                >
+                  <span className="text-4xl">📷</span>
+                  <span className="font-medium">拍照</span>
+                </button>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="h-40 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors"
+                >
+                  <span className="text-4xl">📁</span>
+                  <span className="font-medium">上傳照片 / PDF</span>
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 text-center">支援 JPG、PNG、HEIC、PDF 發票 / 收據</p>
+            </div>
           )}
         </CardContent>
       </Card>
